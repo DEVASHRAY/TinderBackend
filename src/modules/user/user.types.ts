@@ -12,3 +12,15 @@ export interface SignupBody {
 export interface CreateUserInput {
   input: SignupBody;
 }
+
+export interface GetUserBody {
+  userId: string;
+}
+
+export interface UserTypes {
+  SignupBody: SignupBody;
+  CreateUserInput: CreateUserInput;
+  GetUserBody: GetUserBody;
+}
+
+export type UserType = keyof UserTypes;

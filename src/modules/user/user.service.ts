@@ -1,9 +1,10 @@
+import mongoose from 'mongoose';
 import { logger } from '../../lib/logger.ts';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
 // We write `.ts` in source; the compiler turns it into `.js` in the built files.
 import { User } from './user.model.ts';
 // `import type` is erased at compile time — TypeScript uses the type, the built JS does not import it for values.
-import type { CreateUserInput } from './user.types.ts';
+import type { CreateUserInput, GetUserBody } from './user.types.ts';
 
 // Role of `user.service.ts`: "what should the application do?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
@@ -25,6 +26,32 @@ const createUser = async ({ input }: CreateUserInput) => {
   }
 };
 
+const getUserDetails = async ({ userId }: GetUserBody) => {
+  try {
+    if (userId === '') {
+      throw new Error('User ID is required');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      throw new Error('Invalid user id');
+    }
+
+    const user = await User.findById(userId);
+
+    if (user === null) {
+      throw new Error('User not found');
+    }
+
+    return user;
+  } catch (error) {
+    logger.fail({ message: 'Failed to get user details', error });
+    throw error;
+  }
+};
+
+// ⚠️⬆️⚠️ Write all User Service Functions above this line
+// ✅ All Exports for userService
 export const userService = {
   createUser,
+  getUserDetails,
 };
