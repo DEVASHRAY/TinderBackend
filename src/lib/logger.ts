@@ -17,9 +17,10 @@ interface LogInput {
   detail?: string | null;
 }
 
-export interface LoggerMessageInput {
+export interface LoggerMessageInput<Thrown = never> {
   message: string;
   detail?: string | null;
+  error?: Thrown;
 }
 
 export interface ErrorDetailInput {
@@ -99,28 +100,77 @@ const log = ({ level, message, detail = null }: LogInput): void => {
   write({ level, message, detail });
 };
 
-export const logger = {
-  success: ({ message, detail = null }: LoggerMessageInput): void => {
-    log({ level: 'success', message, detail });
-  },
-  fail: ({ message, detail = null }: LoggerMessageInput): void => {
-    log({ level: 'fail', message, detail });
-  },
-  warn: ({ message, detail = null }: LoggerMessageInput): void => {
-    log({ level: 'warn', message, detail });
-  },
-  info: ({ message, detail = null }: LoggerMessageInput): void => {
-    log({ level: 'info', message, detail });
-  },
-  debug: ({ message, detail = null }: LoggerMessageInput): void => {
-    log({ level: 'debug', message, detail });
-  },
+interface AppStackFrameInput {
+  stack: string;
+}
+
+// A stack trace is Node's list of "this function called that function".
+// We skip `node_modules` and keep the first line under `src/` so logs show our file, not Mongoose internals.
+const appStackFrame = ({ stack }: AppStackFrameInput): string | null => {
+  const srcMarker = '/src/';
+  const lines = stack.split('\n');
+
+  for (const line of lines) {
+    if (line.includes('node_modules')) {
+      continue;
+    }
+
+    const srcIndex = line.indexOf(srcMarker);
+    if (srcIndex === -1) {
+      continue;
+    }
+
+    const fromSrc = line.slice(srcIndex + 1);
+    const closingParen = fromSrc.indexOf(')');
+    if (closingParen === -1) {
+      return fromSrc;
+    }
+
+    return fromSrc.slice(0, closingParen);
+  }
+
+  return null;
 };
 
-export const errorDetail = ({ error }: ErrorDetailInput): string => {
+const errorDetail = ({ error }: ErrorDetailInput): string => {
   if (error.stack === undefined) {
     return error.message;
   }
 
-  return error.stack;
+  const file = appStackFrame({ stack: error.stack });
+  if (file === null) {
+    return error.message;
+  }
+
+  return `${error.message}\n    ${file}`;
+};
+
+const resolveLogDetail = <Thrown>({
+  detail = null,
+  error,
+}: LoggerMessageInput<Thrown>): string | null => {
+  // `catch` can throw anything. We only print a stack when the value is actually an `Error`.
+  if (error instanceof Error) {
+    return errorDetail({ error });
+  }
+
+  return detail;
+};
+
+export const logger = {
+  success: <Thrown>(input: LoggerMessageInput<Thrown>): void => {
+    log({ level: 'success', message: input.message, detail: resolveLogDetail(input) });
+  },
+  fail: <Thrown>(input: LoggerMessageInput<Thrown>): void => {
+    log({ level: 'fail', message: input.message, detail: resolveLogDetail(input) });
+  },
+  warn: <Thrown>(input: LoggerMessageInput<Thrown>): void => {
+    log({ level: 'warn', message: input.message, detail: resolveLogDetail(input) });
+  },
+  info: <Thrown>(input: LoggerMessageInput<Thrown>): void => {
+    log({ level: 'info', message: input.message, detail: resolveLogDetail(input) });
+  },
+  debug: <Thrown>(input: LoggerMessageInput<Thrown>): void => {
+    log({ level: 'debug', message: input.message, detail: resolveLogDetail(input) });
+  },
 };

@@ -1,5 +1,5 @@
 ---
-description: Project coding standards — type safety, logging, promises, params, arrows
+description: Project coding standards — types, enums, files, logging, promises, params, arrows, git
 alwaysApply: true
 ---
 
@@ -13,6 +13,69 @@ Forbidden: `as` (including `as const` and angle-bracket casts), `any`, `unknown`
 
 Do this: real types at the source, generics, discriminated unions, `typeof` / `instanceof` / `in` / type predicates, schema validation at I/O boundaries, `satisfies`. If the compiler cannot prove a type, fix the types or the API.
 
+## Enums (closed value sets)
+
+If a field can only be one of a known list (gender, status, role), do **not** use a bare `string` or inline `['a', 'b']` in more than one place.
+
+Do **not** use the TypeScript `enum` keyword. This project compiles with `erasableSyntaxOnly` (types must erase to plain JavaScript; `enum` emits extra runtime code). Do not use `as const`.
+
+Gold standard: a string union in `*.types.ts`, the matching array in `*.constants.ts`, schema imports the array. Never put the union and the array in one file. Never paste the list into the model.
+
+```ts
+// user.types.ts — types only
+export type UserGender = 'female' | 'male' | 'other';
+
+// user.constants.ts — values only
+import type { UserGender } from './user.types.ts';
+export const userGenders: UserGender[] = ['female', 'male', 'other'];
+
+// user.model.ts — schema only
+import { userGenders } from './user.constants.ts';
+gender: { type: String, enum: userGenders }
+```
+
+Do not type free-form text (name, email, about) as an enum.
+
+## Modular files (hard)
+
+One job per file. If a file has two jobs, split it before adding more code. One rule file only: this file.
+
+Feature layout (flat in the feature folder):
+
+```
+src/modules/<feature>/
+  <feature>.types.ts       # `type` / `interface` only
+  <feature>.constants.ts   # runtime values only
+  <feature>.model.ts       # Mongoose schema + model only — "how do I read/write this in Mongo?"
+  <feature>.service.ts     # business rules + model calls — "what should the application do?"
+  <feature>.controller.ts  # HTTP only — take `req` → call service → `res.status` / `res.json`
+  <feature>.routes.ts      # method + URL → controller — "which API calls which function?"
+```
+
+Flow: **Route → Controller → Service → Model → Mongo**. Response: **Mongo → Model → Service → Controller → HTTP**.
+
+Do not put DB or business logic in `*.routes.ts`. Do not put Mongo calls in the controller once a service exists. Do not send `res` from the service.
+
+Keep files **flat**. Do not add `types/` or `constants/` subfolders until a group has multiple files. Shared helpers: `src/lib`. Env/DB: `src/config`. Never a root `src/models` or a junk `utils.ts`.
+
+Forbidden:
+
+- Types and `const` values in the same file
+- Domain types inside `*.model.ts` (except `InferSchemaType` of that schema — moving it cycles imports)
+- Copying a union, interface, or value list into a second file — define once, import
+- Redefining `UserGender` (or any closed set) in the model, controller, or route
+- Empty files or empty feature folders
+- Pre-creating `*.service.ts` (or other layers) with no real export
+- Barrel `index.ts` that re-exports the module unless we explicitly add one
+- Extra `.cursor/rules/*.mdc` files — all standards live here
+
+`*.types.ts`: only `export type` / `export interface`. No `const`, no functions, no schema.  
+`*.constants.ts`: only runtime values. `import type` from `*.types.ts`. Do not declare the union again.  
+`*.model.ts`: `import` constants (e.g. `userGenders`). Do not inline `['female', 'male']`.  
+`*.routes.ts`: only `router.get/post/...` wired to a controller. No `User.create`, no `req.body` handling.
+
+Create a file only when it has a real export.
+
 ## Console logging
 
 Never use raw `console.log`, `console.error`, `console.warn`, or `console.info` in app code. Use the repo logger so the icon shows the outcome:
@@ -23,7 +86,7 @@ Never use raw `console.log`, `console.error`, `console.warn`, or `console.info` 
 - ℹ️ `logger.info` — status that is not pass or fail
 - 🔎 `logger.debug` — diagnostic detail
 
-Short title plus optional `detail`. Do not dump unstructured objects or secrets. Narrow with `error instanceof Error`, then `errorDetail({ error })`.
+Short title plus optional `detail`. Pass the `catch` value as `error`: `logger.fail({ message: 'Failed to sign up', error })`. The logger checks `instanceof Error` and prints the stack. Call sites do not repeat that check. Do not dump unstructured objects or secrets.
 
 ## Promises
 
@@ -33,7 +96,7 @@ Every Promise is handled in `try/catch`, including top-level module code.
 - Callers `await` inside `try/catch`. No floating Promises. No `void promise`.
 - After `catch`, log `fail`/`warn` and recover or rethrow.
 - Prefer `async`/`await` + `try/catch` over `.then()` / `.catch()` chains.
-- Narrow caught values with `instanceof Error`. Do not annotate them as `any` or `unknown`.
+- Narrow caught values with `instanceof Error` when the caller uses `.message` / `.stack`. For logging, pass the catch value into `logger.fail({ message, error })` — the logger does that check.
 
 ## Named parameters
 
@@ -72,6 +135,4 @@ Never commit or push files that do not belong on GitHub:
 - Generated or local junk: `node_modules`, `dist`, `coverage`, `.DS_Store`, `*.tsbuildinfo`
 - Anything listed in `.gitignore`
 
-Keep secrets in `.env` (gitignored). Commit `.env.example` with placeholder names only, never real values. If a secret is in source, move it to env **before** committing.
-
-
+Keep secrets in `.env` (gitignored). Never commit real values. If a secret is in source, move it to env **before** committing.
