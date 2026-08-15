@@ -1,0 +1,77 @@
+---
+description: Project coding standards — type safety, logging, promises, params, arrows
+alwaysApply: true
+---
+
+# Coding standards
+
+## Type safety
+
+Never typecast. Prefer types the compiler can prove.
+
+Forbidden: `as` (including `as const` and angle-bracket casts), `any`, `unknown`, non-null `!`, `@ts-ignore`, `@ts-expect-error`, and lint disables used to silence type errors.
+
+Do this: real types at the source, generics, discriminated unions, `typeof` / `instanceof` / `in` / type predicates, schema validation at I/O boundaries, `satisfies`. If the compiler cannot prove a type, fix the types or the API.
+
+## Console logging
+
+Never use raw `console.log`, `console.error`, `console.warn`, or `console.info` in app code. Use the repo logger so the icon shows the outcome:
+
+- ✅ `logger.success` — passed / connected / started
+- ❌ `logger.fail` — failed / rejected / crashed
+- ⚠️ `logger.warn` — recoverable problem
+- ℹ️ `logger.info` — status that is not pass or fail
+- 🔎 `logger.debug` — diagnostic detail
+
+Short title plus optional `detail`. Do not dump unstructured objects or secrets. Narrow with `error instanceof Error`, then `errorDetail({ error })`.
+
+## Promises
+
+Every Promise is handled in `try/catch`, including top-level module code.
+
+- `async` functions wrap `await` in `try/catch`.
+- Callers `await` inside `try/catch`. No floating Promises. No `void promise`.
+- After `catch`, log `fail`/`warn` and recover or rethrow.
+- Prefer `async`/`await` + `try/catch` over `.then()` / `.catch()` chains.
+- Narrow caught values with `instanceof Error`. Do not annotate them as `any` or `unknown`.
+
+## Named parameters
+
+Named object parameters apply **only to functions we create**.
+
+- Define an `interface` for that object (`LoggerMessageInput`, `ErrorDetailInput`).
+- Call our functions as `fn({ name: value })`.
+- A function we create with no inputs stays `()`.
+- **Do not** wrap, rename, or convert parameters that belong to a library (Express, Mongoose, Node, …) or to TypeScript/JavaScript built-ins. Use those APIs as they are: `app.use((req, res) => { … })`, `mongoose.connect(uri)`.
+
+## Arrow functions
+
+Functions we create are **arrow functions** (`const name = () => { … }`).
+
+Use a `function` declaration only when an arrow cannot do the job (typical case: `this` binding, or a construct that behaves wrongly as an arrow). If you use `function`, add a short comment explaining why the arrow is wrong. Preference is always the arrow.
+
+Library callbacks stay in whatever form the library expects; when we write the callback ourselves, prefer an arrow: `app.listen(port, () => { … })`.
+
+## Comments for uncommon JS / Node
+
+Write comments a frontend engineer new to Node can understand. Use plain English. Spell out jargon the first time (`process`, ESM, TTY, ANSI).
+
+- Explain **why** this exists, and what it does in everyday words.
+- Do not use dense compiler flags as the whole comment (`NodeNext`, `verbatimModuleSyntax`) unless you also explain them.
+- Do not narrate common `if`, `return`, `try/catch`, named params, or arrows.
+
+Do comment Node-specific things: top-level `await`, `.ts` import paths, terminal color codes, `process` / `process.exit`, TTY checks, `import type`, and any rare `function` used instead of an arrow.
+
+## Git
+
+Commit messages must be clear and descriptive. Write full sentences that explain **why** the change exists, not a vague "wip", "fix", or "update".
+
+Never commit or push files that do not belong on GitHub:
+
+- Secrets: `.env`, passwords, API keys, tokens, private keys, Mongo/DB URLs that contain credentials
+- Generated or local junk: `node_modules`, `dist`, `coverage`, `.DS_Store`, `*.tsbuildinfo`
+- Anything listed in `.gitignore`
+
+Keep secrets in `.env` (gitignored). Commit `.env.example` with placeholder names only, never real values. If a secret is in source, move it to env **before** committing.
+
+

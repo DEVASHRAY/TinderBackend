@@ -25,7 +25,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mongoose": "^9.9.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
