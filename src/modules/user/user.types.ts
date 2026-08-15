@@ -1,8 +1,9 @@
 export type UserGender = 'female' | 'male' | 'other';
 
-export interface SignupBody {
-  name?: string;
-  email?: string;
+export interface Users {
+  userId: string;
+  email: string;
+  name: string;
   phoneNumber?: string;
   gender?: UserGender;
   age?: number;
@@ -10,17 +11,12 @@ export interface SignupBody {
 }
 
 export interface CreateUserInput {
-  input: SignupBody;
-}
-
-export interface GetUserBody {
-  userId: string;
+  input: Omit<Users, 'userId'>;
 }
 
 export interface UserTypes {
-  SignupBody: SignupBody;
+  Users: Users;
   CreateUserInput: CreateUserInput;
-  GetUserBody: GetUserBody;
 }
 
 export type UserType = keyof UserTypes;
