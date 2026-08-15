@@ -4,6 +4,17 @@ import express from 'express';
 import { connectDB } from './config/database.ts';
 import { errorDetail, logger } from './lib/logger.ts';
 
+// When you run `npm run dev`, Node starts this file from the top:
+// -> create the Express app and register routes, e.g. GET `/` returns `{ message: 'This is Home Page.' }`
+// -> await startServer()
+// -> connectDB: if `.env` exists, load it into process.env; if not, skip (no crash yet)
+// -> connectDB: read MONGODB_URI — if it is missing, log ❌ FAIL and throw
+// -> connectDB: mongoose.connect(...) — if Mongo is down/wrong password, log ❌ FAIL and throw
+// -> if any of those throws, startServer catch logs ❌ FAIL and process.exit(1) (stop the program; 1 = failed)
+// -> if Mongo succeeded, listen on port 3000 — only now can the browser hit http://localhost:3000
+// -> if listen itself throws, same catch: log ❌ FAIL and process.exit(1)
+// -> the bottom try/catch is a safety net for anything startServer did not catch; it also exits with 1
+
 const app = express();
 const port = 3000;
 
