@@ -3,6 +3,7 @@ import express from 'express';
 // We write `.ts` in source; the compiler turns it into `.js` in the built files.
 import { connectDB } from './config/database.ts';
 import { loadLocalEnv } from './config/env.ts';
+import { errorMiddleware } from './lib/error-middleware.ts';
 import { logger } from './lib/logger.ts';
 import { userRouter } from './modules/user/user.routes.ts';
 
@@ -35,6 +36,9 @@ app.use(express.json());
 // Example: POST /signup → yes → run the handler in `user.routes.ts`. GET /signup → no match → try the next line.
 // Same end result as `app.post('/signup', handler)` written here; the router just keeps user routes in the user module.
 app.use(userRouter);
+
+// Error middleware is last: it only runs after a route calls `next(error)`.
+app.use(errorMiddleware);
 
 const startServer = async () => {
   try {
