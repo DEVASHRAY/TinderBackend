@@ -3,13 +3,13 @@ import type { NextFunction, Request, Response } from 'express';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
 // We write `.ts` in source; the compiler turns it into `.js` in the built files.
 import { userService } from './user.service.ts';
-import type { UserTypes } from './user.types.ts';
+import type { UserTypeCollection } from './user.types.ts';
 
 // Role of `user.controller.ts`: "what came in through HTTP?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
 // This file: take `req.body` / `req.params` / `req.query` → call the service → `res.status` + `res.json`.
 const createUser = async (
-  req: Request<object, object, UserTypes['CreateUserInput']['input']>,
+  req: Request<object, object, UserTypeCollection['CreateUserInput']['input']>,
   res: Response,
   next: NextFunction,
 ) => {
@@ -22,12 +22,12 @@ const createUser = async (
 };
 
 const getUser = async (
-  req: Request<Pick<UserTypes['Users'], 'userId'>>,
+  req: Request<UserTypeCollection['UserIdParams']>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const userDetails = await userService.getUserDetails({ userId: req.params.userId });
+    const userDetails = await userService.getUserDetails({ id: req.params.id });
 
     res.status(200).json({ message: 'User fetched', data: userDetails });
   } catch (error) {
@@ -45,12 +45,12 @@ const getAllUsers = async (_req: Request, res: Response, next: NextFunction) => 
 };
 
 const deleteUser = async (
-  req: Request<Pick<UserTypes['Users'], 'userId'>>,
+  req: Request<UserTypeCollection['UserIdParams']>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    await userService.deleteUser({ userId: req.params.userId });
+    await userService.deleteUser({ id: req.params.id });
     res.status(200).json({ message: 'User deleted' });
   } catch (error) {
     next(error);
@@ -59,16 +59,16 @@ const deleteUser = async (
 
 const updateUser = async (
   req: Request<
-    Pick<UserTypes['Users'], 'userId'>,
+    UserTypeCollection['UserIdParams'],
     object,
-    UserTypes['CreateUserInput']['input']
+    UserTypeCollection['CreateUserInput']['input']
   >,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const user = await userService.updateUser({
-      userId: req.params.userId,
+      id: req.params.id,
       input: req.body,
     });
     res.status(200).json({ message: 'User updated', data: user });

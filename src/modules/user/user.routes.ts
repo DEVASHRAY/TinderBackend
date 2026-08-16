@@ -10,10 +10,10 @@ export const userRouter = Router();
 
 userRouter.post('/createUser', userController.createUser);
 
-userRouter.get('/getUser/:userId', userController.getUser);
+userRouter.get('/getUser/:id', userController.getUser);
 
 userRouter.get('/getAllUsers', userController.getAllUsers);
 
-userRouter.delete('/deleteUser/:userId', userController.deleteUser);
+userRouter.delete('/deleteUser/:id', userController.deleteUser);
 
-userRouter.patch('/updateUser/:userId', userController.updateUser);
+userRouter.patch('/updateUser/:id', userController.updateUser);

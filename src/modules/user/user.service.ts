@@ -2,15 +2,13 @@ import mongoose from 'mongoose';
 import { logger } from '../../lib/logger.ts';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
 // We write `.ts` in source; the compiler turns it into `.js` in the built files.
-import { User } from './user.model.ts';
-// `import type` is erased at compile time — TypeScript uses the type, the built JS does not import it for values.
-import type { UserTypes } from './user.types.ts';
-import { userUpdateAllowedFields } from './user.constants.ts';
+import { User, type UserFields } from './user.model.ts';
+import type { UserTypeCollection } from './user.types.ts';
 
 // Role of `user.service.ts`: "what should the application do?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
 // This file: business rules and model calls. No `req` / `res`, no status codes.
-const createUser = async ({ input }: UserTypes['CreateUserInput']) => {
+const createUser = async ({ input }: UserTypeCollection['CreateUserInput']) => {
   try {
     if (input.name === '' || input.email === '') {
       throw new Error('Name and email are required');
@@ -26,21 +24,26 @@ const createUser = async ({ input }: UserTypes['CreateUserInput']) => {
     return user;
   } catch (error) {
     logger.fail({ message: 'Failed to create user', error });
+    // Unique email index: two signups at once can both pass findOne, then Mongo
+    // rejects the second write with code 11000. Same meaning as "Email already exists".
+    if (error instanceof mongoose.mongo.MongoServerError && error.code === 11000) {
+      throw new Error('Email already exists', { cause: error });
+    }
     throw error;
   }
 };
 
-const getUserDetails = async ({ userId }: Pick<UserTypes['Users'], 'userId'>) => {
+const getUserDetails = async ({ id }: UserTypeCollection['UserIdParams']) => {
   try {
-    if (userId === '') {
+    if (id === '') {
       throw new Error('User ID is required');
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new Error('Invalid user id');
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(id);
 
     if (user === null) {
       throw new Error('User not found');
@@ -65,17 +68,17 @@ const getAllUsers = async () => {
   }
 };
 
-const deleteUser = async ({ userId }: Pick<UserTypes['Users'], 'userId'>) => {
+const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
   try {
-    if (userId === '') {
+    if (id === '') {
       throw new Error('User ID is required');
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new Error('Invalid user id');
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(id);
 
     if (user === null) {
       throw new Error('User not found');
@@ -91,15 +94,15 @@ const deleteUser = async ({ userId }: Pick<UserTypes['Users'], 'userId'>) => {
 };
 
 const updateUser = async ({
-  userId,
+  id,
   input,
-}: Pick<UserTypes['Users'], 'userId'> & UserTypes['CreateUserInput']) => {
+}: UserTypeCollection['UserIdParams'] & UserTypeCollection['CreateUserInput']) => {
   try {
-    if (!userId) {
+    if (id === '') {
       throw new Error('User ID is required');
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new Error('Invalid user id');
     }
 
@@ -107,15 +110,20 @@ const updateUser = async ({
       throw new Error('Email cannot be updated');
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(id);
 
-    if (!user) {
+    if (user === null) {
       throw new Error('User not found');
     }
 
+    const userUpdateAllowedFields: (keyof Omit<
+      UserFields,
+      'createdAt' | 'updatedAt' | 'email' | 'password' | 'id'
+    >)[] = ['name', 'phoneNumber', 'gender', 'age', 'photoUrl'];
+
     userUpdateAllowedFields.forEach((field) => {
       const value = input[field];
-      if (value) {
+      if (value !== undefined && value !== '') {
         user.set(field, value);
       }
     });

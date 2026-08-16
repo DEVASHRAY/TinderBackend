@@ -1,22 +1,11 @@
+import type { UserFields } from './user.model.ts';
+
 export type UserGender = 'female' | 'male' | 'other';
 
-export interface Users {
-  userId: string;
-  email: string;
-  name: string;
-  phoneNumber?: string;
-  gender?: UserGender;
-  age?: number;
-  photoUrl?: string;
+export interface UserTypeCollection {
+  UserFields: UserFields;
+  UserIdParams: Pick<UserFields, 'id'>;
+  CreateUserInput: {
+    input: Omit<UserFields, 'createdAt' | 'updatedAt' | 'id'>;
+  };
 }
-
-export interface CreateUserInput {
-  input: Omit<Users, 'userId'>;
-}
-
-export interface UserTypes {
-  Users: Users;
-  CreateUserInput: CreateUserInput;
-}
-
-export type UserType = keyof UserTypes;

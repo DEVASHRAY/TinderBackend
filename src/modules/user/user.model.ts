@@ -2,9 +2,12 @@ import mongoose from 'mongoose';
 // `import type` is erased at compile time — TypeScript uses the type, the built JS does not import it for values.
 import type { InferSchemaType } from 'mongoose';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
-import { userGenders } from './user.constants.ts';
+
+import validator from 'validator';
+import { UserConstantsCollection } from './user.constants.ts';
 
 // A schema is Mongoose's blueprint for one MongoDB collection: field names, types, and rules.
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -17,33 +20,100 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address'],
+      validate: {
+        validator: (value: string) => validator.isEmail(value),
+        message: 'Please enter a valid email address',
+      },
       unique: true,
       lowercase: true,
       trim: true,
     },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [
+        UserConstantsCollection.strongPasswordOptions.minLength,
+        UserConstantsCollection.strongPasswordMinLengthMessage,
+      ],
+      maxlength: [
+        UserConstantsCollection.userPasswordMaxLength,
+        UserConstantsCollection.userPasswordMaxLengthMessage,
+      ],
+      validate: {
+        // `isStrongPassword` returns true/false. It does not throw, so Mongoose
+        // uses `message` (built from `strongPasswordOptions`) when this is false.
+        validator: (value: string) =>
+          validator.isStrongPassword(value, UserConstantsCollection.strongPasswordOptions),
+        message: UserConstantsCollection.strongPasswordMessage,
+      },
+      // `select: false` hides this path from `find` / `findById`. Mongo still stores it.
+      // Load it on purpose with `.select('+password')`.
+      select: false,
+    },
     phoneNumber: {
       type: String,
       trim: true,
+      match: [/^\d{10}$/, 'Phone number must be 10 digits'],
     },
     gender: {
       type: String,
-      enum: userGenders,
+      required: [true, 'Gender is required'],
+      enum: {
+        values: UserConstantsCollection.userGenders,
+        // Mongoose replaces `{VALUE}` with whatever was sent (not a JS template string).
+        message: '{VALUE} is not a valid gender type',
+      },
     },
     age: {
       type: Number,
-      min: 18,
+      required: [true, 'Age is required'],
+      min: [18, 'Age must be at least 18'],
     },
     photoUrl: {
       type: String,
       trim: true,
+      validate: {
+        validator: (value: string) => validator.isURL(value, { require_protocol: true }),
+        message: 'Please enter a valid photo URL',
+      },
+      default: function defaultPhotoByGender(this: {
+        gender?: (typeof UserConstantsCollection.userGenders)[number];
+      }) {
+        // Mongoose calls this with the document as `this`. An arrow would not see `gender`.
+        if (this.gender === 'male') {
+          return UserConstantsCollection.defaultMalePhotoUrl;
+        }
+
+        if (this.gender === 'female') {
+          return UserConstantsCollection.defaultFemalePhotoUrl;
+        }
+
+        return undefined;
+      },
     },
   },
   {
     timestamps: true,
+    // When we send a user in the API (`res.json`), Mongoose uses toJSON.
+    toJSON: {
+      // virtuals: extra fields Mongoose computes. `id` is one of them:
+      // the same value as Mongo `_id`, written as a normal string.
+      virtuals: true,
+      // `__v` is Mongo's internal edit counter. The frontend does not need it.
+      versionKey: false,
+      // Last step before JSON leaves the server.
+      // The object has BOTH `_id` (Mongo) and `id` (string). We remove `_id`
+      // so Postman/the app only get `id`. The database row is not changed.
+      transform: (_doc, ret: { _id?: mongoose.Types.ObjectId }) => {
+        delete ret._id;
+        return ret;
+      },
+    },
   },
 );
 
-export type UserFields = InferSchemaType<typeof userSchema>;
+export type UserFields = InferSchemaType<typeof userSchema> & {
+  id: string;
+};
 
 export const User = mongoose.model('User', userSchema);
