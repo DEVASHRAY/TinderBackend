@@ -1,3 +1,4 @@
+import argon2 from 'argon2';
 import mongoose from 'mongoose';
 import { logger } from '../../lib/logger.ts';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
@@ -14,13 +15,25 @@ const createUser = async ({ input }: UserTypeCollection['CreateUserInput']) => {
       throw new Error('Name and email are required');
     }
 
+    if (typeof input.password !== 'string' || input.password === '') {
+      throw new Error('Password is required');
+    }
+
     const existingUser = await User.findOne({ email: input.email });
 
     if (existingUser !== null) {
       throw new Error('Email already exists');
     }
 
-    const user = await User.create(input);
+    const user = new User(input);
+    // Runs schema rules (email, strong password, age, …) on what they typed.
+    // Does not write to Mongo yet.
+    await user.validate();
+    // Turn the typed password into an Argon2 hash. We cannot get the original back.
+    user.password = await argon2.hash(input.password);
+    // Do not validate again: the hash is long and is not a "strong password",
+    // so maxlength / isStrongPassword would fail even though the typed one passed.
+    await user.save({ validateBeforeSave: false });
     return user;
   } catch (error) {
     logger.fail({ message: 'Failed to create user', error });
