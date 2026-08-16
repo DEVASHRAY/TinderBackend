@@ -32,18 +32,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [
-        UserConstantsCollection.strongPasswordOptions.minLength,
+        UserConstantsCollection.strongPasswordValidationOptions.minLength,
         UserConstantsCollection.strongPasswordMinLengthMessage,
       ],
       maxlength: [
-        UserConstantsCollection.userPasswordMaxLength,
+        UserConstantsCollection.strongPasswordValidationOptions.userPasswordMaxLength,
         UserConstantsCollection.userPasswordMaxLengthMessage,
       ],
       validate: {
         // `isStrongPassword` returns true/false. It does not throw, so Mongoose
         // uses `message` (built from `strongPasswordOptions`) when this is false.
         validator: (value: string) =>
-          validator.isStrongPassword(value, UserConstantsCollection.strongPasswordOptions),
+          validator.isStrongPassword(
+            value,
+            UserConstantsCollection.strongPasswordValidationOptions,
+          ),
         message: UserConstantsCollection.strongPasswordMessage,
       },
       // `select: false` hides this path from `find` / `findById`. Mongo still stores it.
@@ -102,10 +105,10 @@ const userSchema = new mongoose.Schema(
       // `__v` is Mongo's internal edit counter. The frontend does not need it.
       versionKey: false,
       // Last step before JSON leaves the server.
-      // The object has BOTH `_id` (Mongo) and `id` (string). We remove `_id`
-      // so Postman/the app only get `id`. The database row is not changed.
-      transform: (_doc, ret: { _id?: mongoose.Types.ObjectId }) => {
+      // Drop `_id` (keep string `id`) and `password` even if we loaded the hash to verify login.
+      transform: (_doc, ret: { _id?: mongoose.Types.ObjectId; password?: string }) => {
         delete ret._id;
+        delete ret.password;
         return ret;
       },
     },

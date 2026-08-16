@@ -5,6 +5,7 @@ import { connectDB } from './config/database.ts';
 import { loadLocalEnv } from './config/env.ts';
 import { errorMiddleware } from './lib/error-middleware.ts';
 import { logger } from './lib/logger.ts';
+import { authRouter } from './modules/auth/auth.routes.ts';
 import { userRouter } from './modules/user/user.routes.ts';
 
 // When you run `npm run dev`, Node starts this file from the top:
@@ -29,6 +30,7 @@ const app = express();
 app.use(express.json());
 
 // `app.use(userRouter)` plugs the user mini-app into this server (no path prefix).
+app.use(authRouter);
 app.use(userRouter);
 
 // Error middleware is last: it only runs after a route calls `next(error)`.

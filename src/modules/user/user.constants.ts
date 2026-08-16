@@ -1,6 +1,5 @@
 // `import type` is erased at compile time — TypeScript uses the type, the built JS does not import it for values.
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
-import type { StrongPasswordOptions } from 'validator';
 import type { UserGender } from './user.types.ts';
 
 const userGenders: UserGender[] = ['female', 'male', 'other'];
@@ -11,29 +10,27 @@ const defaultMalePhotoUrl =
 const defaultFemalePhotoUrl =
   'https://cdn.vectorstock.com/i/1000v/14/18/default-female-avatar-profile-picture-icon-grey-vector-34511418.jpg';
 
-const userPasswordMaxLength = 32;
-
-const strongPasswordOptions = {
+const strongPasswordValidationOptions = {
+  userPasswordMaxLength: 32,
   minLength: 8,
   minLowercase: 1,
   minUppercase: 1,
   minNumbers: 1,
   minSymbols: 1,
-} satisfies StrongPasswordOptions;
+};
 
-const strongPasswordMessage = `Password must be at least ${String(strongPasswordOptions.minLength)} characters and include at least ${String(strongPasswordOptions.minUppercase)} uppercase letter, ${String(strongPasswordOptions.minLowercase)} lowercase letter, ${String(strongPasswordOptions.minNumbers)} number, and ${String(strongPasswordOptions.minSymbols)} symbol`;
+const strongPasswordMessage = `Password must be at least ${String(strongPasswordValidationOptions.minLength)} characters and include at least ${String(strongPasswordValidationOptions.minUppercase)} uppercase letter, ${String(strongPasswordValidationOptions.minLowercase)} lowercase letter, ${String(strongPasswordValidationOptions.minNumbers)} number, and ${String(strongPasswordValidationOptions.minSymbols)} symbol`;
 
-const strongPasswordMinLengthMessage = `Password must be at least ${String(strongPasswordOptions.minLength)} characters long`;
+const strongPasswordMinLengthMessage = `Password must be at least ${String(strongPasswordValidationOptions.minLength)} characters long`;
 
-const userPasswordMaxLengthMessage = `Password must be less than ${String(userPasswordMaxLength)} characters`;
+const userPasswordMaxLengthMessage = `Password must be less than ${String(strongPasswordValidationOptions.userPasswordMaxLength)} characters`;
 
 // ⚠️👆⚠️ Write constant above and export them as a collection
 export const UserConstantsCollection = {
   userGenders,
   defaultMalePhotoUrl,
   defaultFemalePhotoUrl,
-  userPasswordMaxLength,
-  strongPasswordOptions,
+  strongPasswordValidationOptions,
   strongPasswordMessage,
   strongPasswordMinLengthMessage,
   userPasswordMaxLengthMessage,
