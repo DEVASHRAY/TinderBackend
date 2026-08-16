@@ -8,18 +8,6 @@ import type { UserTypeCollection } from './user.types.ts';
 // Role of `user.controller.ts`: "what came in through HTTP?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
 // This file: take `req.body` / `req.params` / `req.query` → call the service → `res.status` + `res.json`.
-const createUser = async (
-  req: Request<object, object, UserTypeCollection['CreateUserInput']['input']>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const user = await userService.createUser({ input: req.body });
-    res.status(201).json({ message: 'User signed up', data: user });
-  } catch (error) {
-    next(error);
-  }
-};
 
 const getUser = async (
   req: Request<UserTypeCollection['UserIdParams']>,
@@ -61,7 +49,7 @@ const updateUser = async (
   req: Request<
     UserTypeCollection['UserIdParams'],
     object,
-    UserTypeCollection['CreateUserInput']['input']
+    UserTypeCollection['UserUpdateInput']['input']
   >,
   res: Response,
   next: NextFunction,
@@ -80,7 +68,6 @@ const updateUser = async (
 // ⚠️⬆️⚠️ Write all User Routes Handlers above this line
 // ✅ All Exports for userController
 export const userController = {
-  createUser,
   getUser,
   getAllUsers,
   deleteUser,

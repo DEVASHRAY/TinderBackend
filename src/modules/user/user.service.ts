@@ -1,4 +1,3 @@
-import argon2 from 'argon2';
 import mongoose from 'mongoose';
 import { logger } from '../../lib/logger.ts';
 // Node needs a real file extension in imports (browsers/bundlers often hide this).
@@ -9,42 +8,6 @@ import type { UserTypeCollection } from './user.types.ts';
 // Role of `user.service.ts`: "what should the application do?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
 // This file: business rules and model calls. No `req` / `res`, no status codes.
-const createUser = async ({ input }: UserTypeCollection['CreateUserInput']) => {
-  try {
-    if (input.name === '' || input.email === '') {
-      throw new Error('Name and email are required');
-    }
-
-    if (typeof input.password !== 'string' || input.password === '') {
-      throw new Error('Password is required');
-    }
-
-    const existingUser = await User.findOne({ email: input.email });
-
-    if (existingUser !== null) {
-      throw new Error('Email already exists');
-    }
-
-    const user = new User(input);
-    // Runs schema rules (email, strong password, age, …) on what they typed.
-    // Does not write to Mongo yet.
-    await user.validate();
-    // Turn the typed password into an Argon2 hash. We cannot get the original back.
-    user.password = await argon2.hash(input.password);
-    // Do not validate again: the hash is long and is not a "strong password",
-    // so maxlength / isStrongPassword would fail even though the typed one passed.
-    await user.save({ validateBeforeSave: false });
-    return user;
-  } catch (error) {
-    logger.fail({ message: 'Failed to create user', error });
-    // Unique email index: two signups at once can both pass findOne, then Mongo
-    // rejects the second write with code 11000. Same meaning as "Email already exists".
-    if (error instanceof mongoose.mongo.MongoServerError && error.code === 11000) {
-      throw new Error('Email already exists', { cause: error });
-    }
-    throw error;
-  }
-};
 
 const getUserDetails = async ({ id }: UserTypeCollection['UserIdParams']) => {
   try {
@@ -106,21 +69,10 @@ const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
   }
 };
 
-const updateUser = async ({
-  id,
-  input,
-}: UserTypeCollection['UserIdParams'] & UserTypeCollection['CreateUserInput']) => {
+const updateUser = async ({ id, input }: UserTypeCollection['UserUpdateInput']) => {
   try {
-    if (id === '') {
+    if (!id) {
       throw new Error('User ID is required');
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new Error('Invalid user id');
-    }
-
-    if (input.email) {
-      throw new Error('Email cannot be updated');
     }
 
     const user = await User.findById(id);
@@ -153,7 +105,6 @@ const updateUser = async ({
 // ⚠️⬆️⚠️ Write all User Service Functions above this line
 // ✅ All Exports for userService
 export const userService = {
-  createUser,
   getUserDetails,
   getAllUsers,
   deleteUser,

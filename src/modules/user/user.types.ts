@@ -5,7 +5,7 @@ export type UserGender = 'female' | 'male' | 'other';
 export interface UserTypeCollection {
   UserFields: UserFields;
   UserIdParams: Pick<UserFields, 'id'>;
-  CreateUserInput: {
-    input: Omit<UserFields, 'createdAt' | 'updatedAt' | 'id'>;
+  UserUpdateInput: Pick<UserFields, 'id'> & {
+    input: Partial<Omit<UserFields, 'createdAt' | 'updatedAt' | 'id' | 'email'>>;
   };
 }

@@ -8,8 +8,6 @@ import { userController } from './user.controller.ts';
 // This file: HTTP method + URL → controller. No `req`/`res`, no Mongo, no business rules.
 export const userRouter = Router();
 
-userRouter.post('/createUser', userController.createUser);
-
 userRouter.get('/getUser/:id', userController.getUser);
 
 userRouter.get('/getAllUsers', userController.getAllUsers);

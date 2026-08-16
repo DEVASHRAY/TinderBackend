@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
         UserConstantsCollection.strongPasswordMinLengthMessage,
       ],
       maxlength: [
-        UserConstantsCollection.strongPasswordValidationOptions.userPasswordMaxLength,
+        UserConstantsCollection.userPasswordMaxLength,
         UserConstantsCollection.userPasswordMaxLengthMessage,
       ],
       validate: {
