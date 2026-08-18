@@ -7,7 +7,8 @@ import type { UserTypeCollection } from './user.types.ts';
 
 // Role of `user.controller.ts`: "what came in through HTTP?"
 // Flow: Route → Controller → Service → Model → Mongo. Response: Mongo → Model → Service → Controller → HTTP.
-// This file: take `req.body` / `req.params` / `req.query` → call the service → `res.status` + `res.json`.
+// This file: take `req.body` / `req.params` / `req.query` → call the service → success `res.status` + `res.json`.
+// Failures: `next(error)` — error middleware logs and sends the error body.
 
 const getUser = async (
   req: Request<UserTypeCollection['UserIdParams']>,

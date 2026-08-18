@@ -3,10 +3,12 @@ import express from 'express';
 // We write `.ts` in source; the compiler turns it into `.js` in the built files.
 import { connectDB } from './config/database.ts';
 import { loadLocalEnv } from './config/env.ts';
-import { errorMiddleware } from './lib/error-middleware.ts';
+import { errorMiddleware } from './middlewares/error-middleware.ts';
 import { logger } from './lib/logger.ts';
 import { authRouter } from './modules/auth/auth.routes.ts';
 import { userRouter } from './modules/user/user.routes.ts';
+import cookieParser from 'cookie-parser';
+import { authMiddleware } from './middlewares/auth-middleware.ts';
 
 // When you run `npm run dev`, Node starts this file from the top:
 // -> loadLocalEnv: if `.env` exists, copy its keys into process.env (before Express is created)
@@ -28,9 +30,14 @@ const app = express();
 
 // `express.json()` reads the HTTP request body as text and turns JSON into `req.body`.
 app.use(express.json());
+// `cookie-parser` reads the `Cookie` header and sets `req.cookies` (needed to read the JWT cookie).
+app.use(cookieParser());
 
 // `app.use(userRouter)` plugs the user mini-app into this server (no path prefix).
 app.use(authRouter);
+
+app.use(authMiddleware);
+
 app.use(userRouter);
 
 // Error middleware is last: it only runs after a route calls `next(error)`.
