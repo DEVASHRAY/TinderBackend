@@ -53,6 +53,14 @@ const userSchema = new mongoose.Schema(
       // Load it on purpose with `.select('+password')`.
       select: false,
     },
+    role: {
+      type: String,
+      enum: {
+        values: Object.values(UserConstantsCollection.UserRole),
+        message: '{VALUE} is not a valid role',
+      },
+      default: UserConstantsCollection.UserRole.USER,
+    },
     phoneNumber: {
       type: String,
       trim: true,
@@ -62,7 +70,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Gender is required'],
       enum: {
-        values: UserConstantsCollection.userGenders,
+        values: Object.values(UserConstantsCollection.UserGender),
         // Mongoose replaces `{VALUE}` with whatever was sent (not a JS template string).
         message: '{VALUE} is not a valid gender type',
       },
@@ -80,14 +88,14 @@ const userSchema = new mongoose.Schema(
         message: 'Please enter a valid photo URL',
       },
       default: function defaultPhotoByGender(this: {
-        gender?: (typeof UserConstantsCollection.userGenders)[number];
+        gender?: (typeof UserConstantsCollection.UserGender)[keyof typeof UserConstantsCollection.UserGender];
       }) {
         // Mongoose calls this with the document as `this`. An arrow would not see `gender`.
-        if (this.gender === 'male') {
+        if (this.gender === UserConstantsCollection.UserGender.Male) {
           return UserConstantsCollection.defaultMalePhotoUrl;
         }
 
-        if (this.gender === 'female') {
+        if (this.gender === UserConstantsCollection.UserGender.Female) {
           return UserConstantsCollection.defaultFemalePhotoUrl;
         }
 

@@ -12,11 +12,12 @@ const signup = async ({ input }: AuthTypeCollection['CreateUserInput']) => {
 
   const existingUser = await User.findOne({ email: input.email });
 
-  if (existingUser !== null) {
+  if (existingUser) {
     throw new Error('Email already exists');
   }
 
   const user = new User(input);
+  user.role = UserConstantsCollection.UserRole.USER;
   // Schema rules run on the typed password (and the rest of the document). Nothing is written yet.
   await user.validate();
   // Replace the typed password with an Argon2 hash. We cannot get the original back.

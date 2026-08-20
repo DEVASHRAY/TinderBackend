@@ -10,7 +10,7 @@ import type { UserTypeCollection } from './user.types.ts';
 // `throw` is not caught here — it goes to the controller `catch`, then error middleware.
 
 const getUserDetails = async ({ id }: UserTypeCollection['UserIdParams']) => {
-  if (id === '') {
+  if (!id) {
     throw new Error('User ID is required');
   }
 
@@ -20,7 +20,7 @@ const getUserDetails = async ({ id }: UserTypeCollection['UserIdParams']) => {
 
   const user = await User.findById(id);
 
-  if (user === null) {
+  if (!user) {
     throw new Error('User not found');
   }
 
@@ -33,7 +33,7 @@ const getAllUsers = async () => {
 };
 
 const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
-  if (id === '') {
+  if (!id) {
     throw new Error('User ID is required');
   }
 
@@ -43,7 +43,7 @@ const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
 
   const user = await User.findById(id);
 
-  if (user === null) {
+  if (!user) {
     throw new Error('User not found');
   }
 
@@ -59,18 +59,18 @@ const updateUser = async ({ id, input }: UserTypeCollection['UserUpdateInput']) 
 
   const user = await User.findById(id);
 
-  if (user === null) {
+  if (!user) {
     throw new Error('User not found');
   }
 
   const userUpdateAllowedFields: (keyof Omit<
     UserFields,
     'createdAt' | 'updatedAt' | 'email' | 'password' | 'id'
-  >)[] = ['name', 'phoneNumber', 'gender', 'age', 'photoUrl'];
+  >)[] = ['name', 'phoneNumber', 'gender', 'age', 'photoUrl', 'role'];
 
   userUpdateAllowedFields.forEach((field) => {
     const value = input[field];
-    if (value !== undefined && value !== '') {
+    if (value) {
       user.set(field, value);
     }
   });

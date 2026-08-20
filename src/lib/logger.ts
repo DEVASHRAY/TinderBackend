@@ -73,7 +73,7 @@ const formatLog = ({ level, message, detail }: FormatLogInput): string => {
   const title = paint({ color: colorByLevel[level], text: header });
   const body = `    ${message}`;
 
-  if (detail === null) {
+  if (!detail) {
     return `${title}\n${body}`;
   }
 
@@ -133,12 +133,12 @@ const appStackFrame = ({ stack }: AppStackFrameInput): string | null => {
 };
 
 const errorDetail = ({ error }: ErrorDetailInput): string => {
-  if (error.stack === undefined) {
+  if (!error.stack) {
     return error.message;
   }
 
   const file = appStackFrame({ stack: error.stack });
-  if (file === null) {
+  if (!file) {
     return error.message;
   }
 

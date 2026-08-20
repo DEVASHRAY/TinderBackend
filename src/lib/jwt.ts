@@ -4,7 +4,7 @@ import type { JwtTypeCollection } from './jwt.types.ts';
 
 const getJwtSecret = () => {
   const jwtSecret = process.env['JWT_SECRET'];
-  if (jwtSecret === undefined || jwtSecret === '') {
+  if (!jwtSecret) {
     throw new Error('JWT_SECRET is required');
   }
 

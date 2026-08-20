@@ -39,9 +39,19 @@ const login = async (
   }
 };
 
+const logout = (_res: Request, res: Response, next: NextFunction) => {
+  try {
+    res.clearCookie('token');
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ⚠️⬆️⚠️ Write all Auth Routes Handlers above this line
 // ✅ All Exports for authController
 export const authController = {
   signup,
   login,
+  logout,
 };

@@ -8,7 +8,7 @@ export const authMiddleware = async (req: Request, _res: Response, next: NextFun
   try {
     const { token } = req.cookies as { token: string | undefined };
 
-    if (token === undefined || token === '') {
+    if (!token) {
       throw new Error('Unauthorized');
     }
 

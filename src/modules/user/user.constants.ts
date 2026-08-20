@@ -1,9 +1,16 @@
 // `import type` is erased at compile time — TypeScript uses the type, the built JS does not import it for values.
-// Node needs a real file extension in imports (browsers/bundlers often hide this).
 import type { StrongPasswordOptions } from 'validator';
-import type { UserGender } from './user.types.ts';
 
-const userGenders: UserGender[] = ['female', 'male', 'other'];
+enum UserGender {
+  Female = 'female',
+  Male = 'male',
+  Other = 'other',
+}
+
+enum UserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+}
 
 const defaultMalePhotoUrl =
   'https://media.istockphoto.com/id/1223477625/vector/male-default-avatar-profile-icon-man-face-silhouette-person-placeholder-vector-illustration.jpg?s=170667a&w=0&k=20&c=CrHRmkAACHQyNhv-f3Mj_PpO5WLFJlXcL2QcUlYByP4=';
@@ -27,9 +34,9 @@ const strongPasswordMinLengthMessage = `Password must be at least ${String(stron
 
 const userPasswordMaxLengthMessage = `Password must be less than ${String(userPasswordMaxLength)} characters`;
 
-// ⚠️👆⚠️ Write constant above and export them as a collection
 export const UserConstantsCollection = {
-  userGenders,
+  UserGender,
+  UserRole,
   defaultMalePhotoUrl,
   defaultFemalePhotoUrl,
   strongPasswordValidationOptions,
