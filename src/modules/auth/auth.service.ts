@@ -1,11 +1,12 @@
 import argon2 from 'argon2';
 import { JwtCollection } from '../../lib/jwt.ts';
 import { User } from '../user/user.model.ts';
+import { createUserInstance } from '../user/user.create.ts';
 import type { AuthTypeCollection } from './auth.types.ts';
 import { UserConstantsCollection } from '../user/user.constants.ts';
 import mongoose from 'mongoose';
 
-const signup = async ({ input }: AuthTypeCollection['CreateUserInput']) => {
+const signup = async ({ input }: { input: AuthTypeCollection['CreateUserInput'] }) => {
   if (!input.email || !input.password) {
     throw new Error('Name and email are required');
   }
@@ -16,8 +17,7 @@ const signup = async ({ input }: AuthTypeCollection['CreateUserInput']) => {
     throw new Error('Email already exists');
   }
 
-  const user = new User(input);
-  user.role = UserConstantsCollection.UserRole.USER;
+  const user = createUserInstance(input);
   // Schema rules run on the typed password (and the rest of the document). Nothing is written yet.
   await user.validate();
   // Replace the typed password with an Argon2 hash. We cannot get the original back.

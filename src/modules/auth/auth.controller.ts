@@ -4,7 +4,7 @@ import type { AuthTypeCollection } from './auth.types.ts';
 import type { NextFunction, Request, Response } from 'express';
 
 const signup = async (
-  req: Request<object, object, AuthTypeCollection['CreateUserInput']['input']>,
+  req: Request<object, object, AuthTypeCollection['CreateUserInput']>,
   res: Response,
   next: NextFunction,
 ) => {
