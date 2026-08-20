@@ -6,9 +6,11 @@ import { loadLocalEnv } from './config/env.ts';
 import { errorMiddleware } from './middlewares/error-middleware.ts';
 import { logger } from './lib/logger.ts';
 import { authRouter } from './modules/auth/auth.routes.ts';
+import { profileRouter } from './modules/profile/profile.routes.ts';
 import { userRouter } from './modules/user/user.routes.ts';
 import cookieParser from 'cookie-parser';
 import { authMiddleware } from './middlewares/auth-middleware.ts';
+import { adminMiddleware } from './middlewares/admin-middleware.ts';
 
 // When you run `npm run dev`, Node starts this file from the top:
 // -> loadLocalEnv: if `.env` exists, copy its keys into process.env (before Express is created)
@@ -38,7 +40,9 @@ app.use(authRouter);
 
 app.use(authMiddleware);
 
+app.use('/users', adminMiddleware);
 app.use(userRouter);
+app.use(profileRouter);
 
 // Error middleware is last: it only runs after a route calls `next(error)`.
 app.use(errorMiddleware);

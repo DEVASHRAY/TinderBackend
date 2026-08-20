@@ -127,4 +127,8 @@ export type UserFields = InferSchemaType<typeof userSchema> & {
   id: string;
 };
 
+// UserFields is the data (name, email, …). UserDocument is that Mongo row loaded in memory,
+// so it also has Mongoose methods like `save` and `set`.
+export type UserDocument = mongoose.HydratedDocumentFromSchema<typeof userSchema>;
+
 export const User = mongoose.model('User', userSchema);

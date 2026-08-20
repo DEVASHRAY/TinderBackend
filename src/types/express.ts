@@ -1,4 +1,4 @@
-import type { UserFields } from '../modules/user/user.model.ts';
+import type { UserDocument } from '../modules/user/user.model.ts';
 
 // Express does not know `req.user` by default. This file teaches TypeScript:
 // after auth middleware, `req.user` is the logged-in user (or missing on public routes).
@@ -7,7 +7,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace -- Express request typing
   namespace Express {
     interface Request {
-      user?: UserFields;
+      user?: UserDocument;
     }
   }
 }

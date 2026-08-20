@@ -9,7 +9,7 @@ import type { UserTypeCollection } from './user.types.ts';
 // This file: business rules and model calls. No `req` / `res`, no status codes, no logger.
 // `throw` is not caught here — it goes to the controller `catch`, then error middleware.
 
-const getUserDetails = async ({ id }: UserTypeCollection['UserIdParams']) => {
+const getUserDetails = async ({ id }: Pick<UserFields, 'id'>) => {
   if (!id) {
     throw new Error('User ID is required');
   }
@@ -32,7 +32,7 @@ const getAllUsers = async () => {
   return users;
 };
 
-const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
+const deleteUser = async ({ id }: Pick<UserFields, 'id'>) => {
   if (!id) {
     throw new Error('User ID is required');
   }
@@ -52,23 +52,22 @@ const deleteUser = async ({ id }: UserTypeCollection['UserIdParams']) => {
   return { message: 'User deleted' };
 };
 
-const updateUser = async ({ id, input }: UserTypeCollection['UserUpdateInput']) => {
-  if (!id) {
-    throw new Error('User ID is required');
-  }
-
+const updateUser = async ({
+  id,
+  input,
+}: Pick<UserFields, 'id'> & {
+  input: UserTypeCollection['AdminOnlyUserUpdateInput'];
+}) => {
   const user = await User.findById(id);
 
   if (!user) {
     throw new Error('User not found');
   }
 
-  const userUpdateAllowedFields: (keyof Omit<
-    UserFields,
-    'createdAt' | 'updatedAt' | 'email' | 'password' | 'id'
-  >)[] = ['name', 'phoneNumber', 'gender', 'age', 'photoUrl', 'role'];
+  const adminOnlyUserUpdateAllowedFields: (keyof UserTypeCollection['AdminOnlyUserUpdateInput'])[] =
+    ['name', 'phoneNumber', 'gender', 'age', 'photoUrl', 'role'];
 
-  userUpdateAllowedFields.forEach((field) => {
+  adminOnlyUserUpdateAllowedFields.forEach((field) => {
     const value = input[field];
     if (value) {
       user.set(field, value);
