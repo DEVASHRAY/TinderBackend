@@ -24,6 +24,8 @@ const connectionSchema = new Schema(
   },
 );
 
+connectionSchema.index({ senderId: 1, receiverId: 1 }, { unique: true });
+
 export type ConnectionFieldsType = InferSchemaType<typeof connectionSchema> & {
   id: string;
 };
