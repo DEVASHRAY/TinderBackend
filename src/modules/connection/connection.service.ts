@@ -64,8 +64,38 @@ const createConnection = async ({
   }
 };
 
-const updateConnection = () => {
-  return 'Done';
+const updateConnection = async ({
+  connectionId,
+  status,
+  user,
+}: {
+  user: UserDocument;
+  connectionId: string;
+  status: ConnectionTypeCollection['UpdateConnectionAllowedStatusType'];
+}) => {
+  if (!ConnectionConstantsCollection.UpdateConnectionAllowedStatus.includes(status)) {
+    throw new Error('Invalid connection status');
+  }
+
+  const connection = await Connection.findById(connectionId);
+
+  if (!connection) {
+    throw new Error('Connection not found');
+  }
+
+  if (!connection.receiverId.equals(user.id)) {
+    throw new Error('You are not authorized to update this connection');
+  }
+
+  if (connection.status !== ConnectionConstantsCollection.CONNECTION_STATUS_ENUM.INTERESTED) {
+    throw new Error(`Connection cannot be updated to ${status} status`);
+  }
+
+  connection.status = status;
+
+  await connection.save();
+
+  return connection;
 };
 
 const getConnections = () => {

@@ -36,15 +36,43 @@ const createConnection = async (
     });
 
     // Return the response received from the connection service
-    res.status(200).json({ message: 'Connection created', data: connection });
+    res.status(201).json({ message: 'Connection created', data: connection });
   } catch (error) {
     next(error);
   }
 };
 
-const updateConnection = (_req: Request, res: Response, next: NextFunction) => {
+const updateConnection = async (
+  req: Request<
+    { connectionId?: string },
+    object,
+    { status?: ConnectionTypeCollection['UpdateConnectionAllowedStatusType'] }
+  >,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    res.status(200).json({ message: 'Connection created' });
+    const { user, body, params } = req;
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!params.connectionId) {
+      throw new Error('Connection ID is required');
+    }
+
+    if (!body.status) {
+      throw new Error('Status is required');
+    }
+
+    const updatedConnection = await connectionService.updateConnection({
+      user,
+      connectionId: params.connectionId,
+      status: body.status,
+    });
+
+    res.status(200).json({ message: 'Connection updated', data: updatedConnection });
   } catch (error) {
     next(error);
   }

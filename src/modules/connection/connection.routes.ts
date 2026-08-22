@@ -5,6 +5,6 @@ export const connectionRouter = Router();
 
 connectionRouter.post('/connection', ConnectionController.createConnection);
 
-connectionRouter.patch('/connection/:id', ConnectionController.updateConnection);
+connectionRouter.patch('/connection/:connectionId', ConnectionController.updateConnection);
 
 connectionRouter.get('/connection', ConnectionController.getConnections);
