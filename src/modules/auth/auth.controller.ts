@@ -48,10 +48,28 @@ const logout = (_res: Request, res: Response, next: NextFunction) => {
   }
 };
 
+const signupBulk = async (
+  req: Request<object, object, { users?: AuthTypeCollection['CreateUserInput'][] }>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.body.users) {
+      throw new Error('Users are required');
+    }
+
+    const users = await authService.signupBulk({ users: req.body.users });
+    res.status(201).json({ message: 'Users created successfully', data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ⚠️⬆️⚠️ Write all Auth Routes Handlers above this line
 // ✅ All Exports for authController
 export const authController = {
   signup,
+  signupBulk,
   login,
   logout,
 };

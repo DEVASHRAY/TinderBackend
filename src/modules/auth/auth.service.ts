@@ -3,10 +3,11 @@ import { JwtCollection } from '../../lib/jwt.ts';
 import { User } from '../user/user.model.ts';
 import { createUserInstance } from '../user/user.create.ts';
 import type { AuthTypeCollection } from './auth.types.ts';
+import { AuthConstantsCollection } from './auth.constants.ts';
 import { UserConstantsCollection } from '../user/user.constants.ts';
 import mongoose from 'mongoose';
 
-const signup = async ({ input }: { input: AuthTypeCollection['CreateUserInput'] }) => {
+const createUser = async ({ input }: { input: AuthTypeCollection['CreateUserInput'] }) => {
   if (!input.email || !input.password) {
     throw new Error('Name and email are required');
   }
@@ -35,9 +36,33 @@ const signup = async ({ input }: { input: AuthTypeCollection['CreateUserInput'] 
     throw error;
   }
 
+  return user;
+};
+
+const signup = async ({ input }: { input: AuthTypeCollection['CreateUserInput'] }) => {
+  const user = await createUser({ input });
   const token = JwtCollection.generateAccessToken({ userId: user.id });
 
   return { user, token };
+};
+
+const signupBulk = async ({ users }: { users: AuthTypeCollection['CreateUserInput'][] }) => {
+  if (!users.length) {
+    throw new Error('Users are required');
+  }
+
+  if (users.length > AuthConstantsCollection.maxBulkSignupCount) {
+    throw new Error('Too many users');
+  }
+
+  const createdUsers = [];
+
+  for (const input of users) {
+    const user = await createUser({ input });
+    createdUsers.push(user);
+  }
+
+  return createdUsers;
 };
 
 const login = async ({ input }: AuthTypeCollection['LoginInput']) => {
@@ -76,4 +101,4 @@ const login = async ({ input }: AuthTypeCollection['LoginInput']) => {
 // ⚠️⬆️⚠️ Write all Auth Services above this line
 // ✅ All Exports for authService
 
-export const authService = { login, signup };
+export const authService = { login, signup, signupBulk };
