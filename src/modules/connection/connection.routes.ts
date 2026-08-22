@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { ConnectionController } from './connection.controller.ts';
+import { connectionController } from './connection.controller.ts';
 
 export const connectionRouter = Router();
 
-connectionRouter.post('/connection', ConnectionController.createConnection);
+connectionRouter.post('/connection', connectionController.createConnection);
 
-connectionRouter.patch('/connection/:connectionId', ConnectionController.updateConnection);
+connectionRouter.patch('/connection/:connectionId', connectionController.updateConnection);
 
-connectionRouter.get('/connection', ConnectionController.getConnections);
+connectionRouter.get('/connection', connectionController.getConnections);

@@ -6,10 +6,12 @@ const connectionSchema = new Schema(
     senderId: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: 'User',
     },
     receiverId: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: 'User',
     },
     // Min of the two user ids by string order. With maxUserId this is one unordered pair.
     minUserId: {
@@ -56,5 +58,7 @@ connectionSchema.index({ minUserId: 1, maxUserId: 1 }, { unique: true });
 export type ConnectionFieldsType = InferSchemaType<typeof connectionSchema> & {
   id: string;
 };
+
+export type ConnectionDocument = mongoose.HydratedDocumentFromSchema<typeof connectionSchema>;
 
 export const Connection = model('Connection', connectionSchema);

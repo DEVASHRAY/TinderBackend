@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { User, type UserDocument } from '../user/user.model.ts';
 import { ConnectionConstantsCollection } from './connection.constant.ts';
-import { Connection } from './connection.model.ts';
+import { Connection, type ConnectionDocument } from './connection.model.ts';
 import { getMinMaxUserIds } from './connection.pair.ts';
 import type { ConnectionTypeCollection } from './connection.types.ts';
 
@@ -98,8 +98,55 @@ const updateConnection = async ({
   return connection;
 };
 
-const getConnections = () => {
-  return 'Connections fetched';
+const getConnections = async ({
+  user,
+  connectionType,
+}: {
+  user: UserDocument;
+  connectionType: ConnectionTypeCollection['ConnectionListType'];
+}) => {
+  let connections: ConnectionDocument[];
+
+  switch (connectionType) {
+    case 'matches': {
+      connections = await Connection.find({
+        status: ConnectionConstantsCollection.CONNECTION_STATUS_ENUM.ACCEPTED,
+        $or: [{ senderId: user.id }, { receiverId: user.id }],
+      });
+      break;
+    }
+    case 'sent': {
+      connections = await Connection.find({
+        status: ConnectionConstantsCollection.CONNECTION_STATUS_ENUM.INTERESTED,
+        $or: [{ senderId: user.id }],
+      });
+      break;
+    }
+
+    case 'received': {
+      connections = await Connection.find({
+        status: ConnectionConstantsCollection.CONNECTION_STATUS_ENUM.INTERESTED,
+        $or: [{ receiverId: user.id }],
+      });
+      break;
+    }
+    default: {
+      throw new Error('Invalid Status');
+    }
+  }
+
+  await Connection.populate(connections, [
+    { path: 'senderId', select: ConnectionConstantsCollection.connectionUserSelect },
+    { path: 'receiverId', select: ConnectionConstantsCollection.connectionUserSelect },
+  ]);
+
+  return connections.map((connection) => {
+    if (user.id === connection.senderId.id.toString()) {
+      return connection.receiverId.toJSON();
+    }
+
+    return connection.senderId.toJSON();
+  });
 };
 
 export const connectionService = {

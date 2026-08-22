@@ -78,15 +78,39 @@ const updateConnection = async (
   }
 };
 
-const getConnections = (_req: Request, res: Response, next: NextFunction) => {
+const getConnections = async (
+  req: Request<
+    object,
+    object,
+    object,
+    { connectionType?: ConnectionTypeCollection['ConnectionListType'] }
+  >,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    res.status(200).json({ message: 'Connections fetched' });
+    const { user, query } = req;
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!query.connectionType) {
+      throw new Error('Connection type is required');
+    }
+
+    const connections = await connectionService.getConnections({
+      user,
+      connectionType: query.connectionType,
+    });
+
+    res.status(200).json({ message: 'Connections fetched', data: connections });
   } catch (error) {
     next(error);
   }
 };
 
-export const ConnectionController = {
+export const connectionController = {
   getConnections,
   updateConnection,
   createConnection,
