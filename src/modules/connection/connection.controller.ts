@@ -36,7 +36,7 @@ const createConnection = async (
     });
 
     // Return the response received from the connection service
-    res.status(200).json({ message: 'Connection updated', data: connection });
+    res.status(200).json({ message: 'Connection created', data: connection });
   } catch (error) {
     next(error);
   }

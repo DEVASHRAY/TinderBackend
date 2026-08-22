@@ -1,4 +1,4 @@
-import { model, Schema, type InferSchemaType } from 'mongoose';
+import mongoose, { model, Schema, type InferSchemaType } from 'mongoose';
 import { ConnectionConstantsCollection } from './connection.constant.ts';
 
 const connectionSchema = new Schema(
@@ -8,6 +8,16 @@ const connectionSchema = new Schema(
       required: true,
     },
     receiverId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    // Min of the two user ids by string order. With maxUserId this is one unordered pair.
+    minUserId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    // Max of the two user ids by string order. A→B and B→A share the same min/max pair.
+    maxUserId: {
       type: Schema.Types.ObjectId,
       required: true,
     },
@@ -21,10 +31,27 @@ const connectionSchema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true,
+      versionKey: false,
+      transform: (
+        _doc,
+        ret: {
+          _id?: mongoose.Types.ObjectId;
+          minUserId?: mongoose.Types.ObjectId;
+          maxUserId?: mongoose.Types.ObjectId;
+        },
+      ) => {
+        delete ret._id;
+        delete ret.minUserId;
+        delete ret.maxUserId;
+        return ret;
+      },
+    },
   },
 );
 
-connectionSchema.index({ senderId: 1, receiverId: 1 }, { unique: true });
+connectionSchema.index({ minUserId: 1, maxUserId: 1 }, { unique: true });
 
 export type ConnectionFieldsType = InferSchemaType<typeof connectionSchema> & {
   id: string;

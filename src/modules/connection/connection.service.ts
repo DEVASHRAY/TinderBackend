@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import { User, type UserDocument } from '../user/user.model.ts';
 import { ConnectionConstantsCollection } from './connection.constant.ts';
 import { Connection } from './connection.model.ts';
+import { getMinMaxUserIds } from './connection.pair.ts';
 import type { ConnectionTypeCollection } from './connection.types.ts';
 
 const createConnection = async ({
@@ -29,28 +31,37 @@ const createConnection = async ({
     throw new Error('Receiver user not found');
   }
 
-  // Check if the connection already exists
+  // A→B and B→A must hit the same unique pair, not two directed rows.
+  const { minUserId, maxUserId } = getMinMaxUserIds({
+    senderId: user.id,
+    receiverId,
+  });
 
+  // $and = both fields must match (same as writing { minUserId, maxUserId } without $and).
   const connection = await Connection.findOne({
-    $or: [
-      { senderId: user.id, receiverId },
-      { senderId: receiverId, receiverId: user.id },
-    ],
+    $and: [{ minUserId }, { maxUserId }],
   });
 
   if (connection) {
     throw new Error('Connection already exists');
   }
 
-  // Create the connection
+  try {
+    const newConnection = await Connection.create({
+      senderId: user.id,
+      receiverId,
+      minUserId,
+      maxUserId,
+      status: ConnectionConstantsCollection.CONNECTION_STATUS_ENUM[status],
+    });
 
-  const newConnection = await Connection.create({
-    senderId: user.id,
-    receiverId,
-    status: ConnectionConstantsCollection.CONNECTION_STATUS_ENUM[status],
-  });
-
-  return newConnection;
+    return newConnection;
+  } catch (error) {
+    if (error instanceof mongoose.mongo.MongoServerError && error.code === 11000) {
+      throw new Error('Connection already exists', { cause: error });
+    }
+    throw error;
+  }
 };
 
 const updateConnection = () => {
